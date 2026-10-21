@@ -15,34 +15,41 @@
     <main>
         <section id="ToDo">
             <h2>To Do</h2>
-            <article class="card">
-                <h3>Лягти спати вчасно</h3>
-                <label for="card-input-id-1">Коментар до картки:</label>
+            <div class="task-list" id="todo-list">
+                <article class="card">
+                    <h3>Лягти спати вчасно</h3>
+                    <label for="card-input-id-1">Коментар до картки:</label>
                     <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-1"></textarea>
-            </article>
+                    </article>
+            </div>
         </section>
 
         <section id="InProgress">
             <h2>In Progress</h2>
-            <article class="card">
-                <h3>КП№6</h3>
-                    <label for="card-input-id-2">Коментар до картки:</label>
-                    <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
-            </article>
+            <div class="task-list" id="inprogress-list">
+                <article class="card">
+                    <h3>КП№7</h3>
+                        <label for="card-input-id-2">Коментар до картки:</label>
+                        <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
+                </article>
+            </div>
         </section>
 
         <section id="Done">
             <h2>Done</h2>
-            <article class="card">
-                <h3>Повечеряти</h3>
-                    <label for="card-input-id-2">Коментар до картки:</label>
-                    <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
-            </article>
-            <article class="card">
-                <h3>Прибрати кімнату</h3>
-                    <label for="card-input-id-2">Коментар до картки:</label>
-                    <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
-            </article>
+            <p id="done-count">Виконано: 0</p>
+            <div class="task-list" id="done-list">
+                <article class="card">
+                    <h3>Повечеряти</h3>
+                        <label for="card-input-id-2">Коментар до картки:</label>
+                        <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
+                </article>
+                <article class="card">
+                    <h3>Прибрати кімнату</h3>
+                        <label for="card-input-id-2">Коментар до картки:</label>
+                        <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
+                </article>
+            </div>
         </section>
     </main>
 
