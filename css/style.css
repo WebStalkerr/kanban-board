@@ -91,6 +91,7 @@ section h2 {
 .card.done {
     background-color: #f0fdf4;
     border-left: 4px solid #166534;
+    cursor: default;
 }
 
 .card.done h3 {
@@ -144,6 +145,15 @@ footer {
         grid-template-columns: repeat(3, 1fr);
         gap: 16px;
     }
+
+    .task-form {
+        flex-direction: row;
+        align-items: flex-end;
+    }
+
+    .form-field {
+        flex: 1;
+    }
 }
 
 @media (min-width: 1024px) {
@@ -161,4 +171,60 @@ footer {
 img {
     max-width: 100%;
     height: auto;
+}
+
+.task-form {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.task-form label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.task-form input,
+.task-form select {
+    padding: 8px;
+    border: 1px solid #6b7280;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.875rem;
+    color: #1f2937;
+    background-color: #ffffff;
+}
+
+.task-form button {
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #1e3a8a;
+    cursor: pointer;
+}
+
+.task-form button:hover {
+    background-color: #1d4ed8;
+}
+
+.card {
+    cursor: pointer;
+}
+
+.card:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }

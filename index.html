@@ -12,6 +12,26 @@
         <h1>Kanban-дошка справ</h1>
     </header>
 
+    <form id="task-form" class="task-form">
+        <div class="form-field">
+            <label for="task-title">Назва задачі:</label>
+            <input type="text" id="task-title" name="title"
+                required pattern=".{3,}" title="Мінімум 3 символи"
+                placeholder="Наприклад: Купити хліб">
+        </div>
+
+        <div class="form-field">
+            <label for="task-column">Колонка:</label>
+            <select id="task-column" name="column">
+                <option value="todo">To Do</option>
+                <option value="inprogress">In Progress</option>
+                <option value="done">Done</option>
+            </select>
+        </div>
+
+        <button type="submit">Додати задачу</button>
+    </form>
+
     <main>
         <section id="ToDo">
             <h2>To Do</h2>
