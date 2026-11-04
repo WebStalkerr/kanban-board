@@ -12,8 +12,14 @@ const STATUS_BY_COLUMN = {
     done: 'Done'
 };
 
+// Публічний мок-API JSONPlaceholder (https://jsonplaceholder.typicode.com), ресурс /todos, фільтр userId=3
+const API_URL = 'https://jsonplaceholder.typicode.com/todos?userId=3';
 
 // колонкам "To Do" / "In Progress" / "Done" з index.html
+const tasks = [];
+let nextId = 1;
+
+/* приклади більше не активні, замінено пустим масивом вище для зовнішнього пулу
 const tasks = [
     { id: 1, title: 'Лягти спати вчасно', status: 'To Do', column: 'todo' },
     { id: 2, title: 'КП№8', status: 'In Progress', column: 'inprogress' },
@@ -21,6 +27,7 @@ const tasks = [
     { id: 4, title: 'Прибрати кімнату', status: 'Done', column: 'done' }
 ];
 let nextId = tasks.length + 1;
+*/
 
 //вибір контейнерів і елемента-підсумку
 const todoList = document.querySelector('#todo-list');
@@ -31,6 +38,9 @@ const doneCountEl = document.querySelector('#done-count');
 const form = document.querySelector('#task-form');
 const titleInput = document.querySelector('#task-title');
 const columnSelect = document.querySelector('#task-column');
+const loadingEl = document.querySelector('#loading');
+const errorEl = document.querySelector('#error');
+const refreshBtn = document.querySelector('#refresh-btn');
 
 // Відповідність значення task.column до контейнера
 const containers = {
@@ -73,13 +83,17 @@ function logDoneTasks(taskList) {
 const isDone = task => task.status === 'Done';
 
 // Перевірка isDone на кожній задачі окремо
+/* більше не активно
 for (const task of tasks) {
     console.log(`isDone('${task.title}') = ${isDone(task)}`);
 }
+*/
 
 //Консольний вивід
+/* більше не активно, вивід був для прикладів карток
 countByStatus(tasks);
 logDoneTasks(tasks);
+*/
 
 // Очищає три колонки, створює article.card для кожної задачі,
 // додає її в контейнер за task.column і оновлює лічильник виконаних
@@ -123,13 +137,36 @@ function renderTasks(taskList) {
     doneCountEl.textContent = `Виконано: ${doneTotal}`;
 }
 
-//рендер при завантаженні сторінки
-renderTasks(tasks);
+//рендер при завантаженні сторінки, не активний з переходу на зовнішній пул
+//renderTasks(tasks);
 
 //ставить задачі колонку й узгоджений з нею статус
 function setColumn(task, column) {
     task.column = column;
     task.status = STATUS_BY_COLUMN[column];
+}
+
+// показує / ховає індикатор завантаження і блокує кнопку "Оновити"
+function showLoading(isLoading) {
+    loadingEl.hidden = !isLoading;
+    refreshBtn.disabled = isLoading;
+}
+
+// показує повідомлення про помилку; порожній рядок ховає елемент
+function showError(message) {
+    errorEl.textContent = message;
+    errorEl.hidden = message === '';
+}
+
+// перетворює об'єкт todo з API на задачу формату нашої дошки
+function mapTodoToTask(todo) {
+    const column = todo.completed ? 'done' : 'todo';
+    return {
+        id: todo.id,
+        title: todo.title,
+        status: STATUS_BY_COLUMN[column],
+        column: column
+    };
 }
 
 //ловить випадок, коли в полі лише пробіли
@@ -155,6 +192,8 @@ form.addEventListener('submit', event => {
     form.reset();
 });
 
+loadData();
+
 //клік на картку переміщує задачу до наступної колонки, обробник на кожен із трьох контейнерів
 function handleCardClick(event) {
     const card = event.target.closest('article.card');
@@ -175,3 +214,36 @@ function handleCardClick(event) {
 for (const container of Object.values(containers)) {
     container.addEventListener('click', handleCardClick);
 }
+
+refreshBtn.addEventListener('click', loadData);
+
+
+// Завантажує задачі з JSONPlaceholder (GET https://jsonplaceholder.typicode.com/todos?userId=3),
+// completed: true → колонка Done, false - To Do; помилки показує в #error
+async function loadData() {
+    showLoading(true);
+    showError('');       // ховаємо стару помилку при повторній спробі
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error(`Сервер відповів кодом ${response.status}`);
+        }
+        const data = await response.json();
+
+        tasks.length = 0;
+        tasks.push(...data.map(mapTodoToTask));    // completed - колонка Done
+        nextId = Math.max(0, ...tasks.map(t => t.id)) + 1;  // щоб нові задачі не мали id як у API
+
+        renderTasks(tasks);   
+        countByStatus(tasks); 
+    } 
+    catch (error) {
+        showError('Дошку тимчасово не вдалося завантажити');  
+        console.error('Помилка завантаження задач:', error); 
+    }
+    finally {
+        showLoading(false);  // зникає і при успіху, і при помилці
+    }
+}
+
+loadData(); // тимчасовий виклик, остаточний буде в кроці 6

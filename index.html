@@ -32,6 +32,12 @@
         <button type="submit">Додати задачу</button>
     </form>
 
+    <div class="status-bar">
+        <button type="button" id="refresh-btn" class="btn">Оновити</button>
+        <p id="loading" class="status status-loading" hidden>Завантаження...</p>
+        <p id="error" class="status status-error" role="alert" hidden></p>
+    </div>
+
     <main>
         <section id="ToDo">
             <h2>To Do</h2>
