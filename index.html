@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kanban - Дошка справ</title>
 <link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 <script src="script.js" defer></script>
 </head>
 <body>
@@ -38,46 +39,35 @@
         <p id="error" class="status status-error" role="alert" hidden></p>
     </div>
 
-    <main>
-        <section id="ToDo">
-            <h2>To Do</h2>
-            <div class="task-list" id="todo-list">
-                <article class="card">
-                    <h3>Лягти спати вчасно</h3>
-                    <label for="card-input-id-1">Коментар до картки:</label>
-                    <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-1"></textarea>
-                    </article>
-            </div>
-        </section>
+    <main id="board" v-cloak>
+    <section id="ToDo">
+        <h2>To Do</h2>
+        <div class="task-list" id="todo-list">
+            <task-card v-for="task in todoTasks" :key="task.id"
+                :task-id="task.id" :title="task.title" :column="task.column"
+                @move-next="moveNext"></task-card>
+        </div>
+    </section>
 
-        <section id="InProgress">
-            <h2>In Progress</h2>
-            <div class="task-list" id="inprogress-list">
-                <article class="card">
-                    <h3>КП№7</h3>
-                        <label for="card-input-id-2">Коментар до картки:</label>
-                        <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
-                </article>
-            </div>
-        </section>
+    <section id="InProgress">
+        <h2>In Progress</h2>
+        <div class="task-list" id="inprogress-list">
+            <task-card v-for="task in inProgressTasks" :key="task.id"
+                :task-id="task.id" :title="task.title" :column="task.column"
+                @move-next="moveNext"></task-card>
+        </div>
+    </section>
 
-        <section id="Done">
-            <h2>Done</h2>
-            <p id="done-count">Виконано: 0</p>
-            <div class="task-list" id="done-list">
-                <article class="card">
-                    <h3>Повечеряти</h3>
-                        <label for="card-input-id-2">Коментар до картки:</label>
-                        <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
-                </article>
-                <article class="card">
-                    <h3>Прибрати кімнату</h3>
-                        <label for="card-input-id-2">Коментар до картки:</label>
-                        <textarea name="card-comment" placeholder="Коментар до картки завдання..." id="card-input-id-2"></textarea>
-                </article>
-            </div>
-        </section>
-    </main>
+    <section id="Done">
+        <h2>Done</h2>
+        <p id="done-count">Виконано: {{ doneCount }}</p>
+        <div class="task-list" id="done-list">
+            <task-card v-for="task in doneTasks" :key="task.id"
+                :task-id="task.id" :title="task.title" :column="task.column"
+                @move-next="moveNext"></task-card>       
+        </div>
+    </section>
+</main>
 
     <footer>
         <p>Створено студентом факультету ФІОТ КПІ групи ІП-51 Малявським К.В. 2026</p>
