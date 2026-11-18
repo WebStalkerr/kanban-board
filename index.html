@@ -25,7 +25,7 @@
             <label for="task-column">Колонка:</label>
             <select id="task-column" name="column">
                 <option value="todo">To Do</option>
-                <option value="inprogress">In Progress</option>
+                <option value="doing">In Progress</option>
                 <option value="done">Done</option>
             </select>
         </div>
@@ -45,7 +45,7 @@
         <div class="task-list" id="todo-list">
             <task-card v-for="task in todoTasks" :key="task.id"
                 :task-id="task.id" :title="task.title" :column="task.column"
-                @move-next="moveNext"></task-card>
+                @move-next="moveNext" @remove="removeTask"></task-card>
         </div>
     </section>
 
@@ -54,7 +54,7 @@
         <div class="task-list" id="inprogress-list">
             <task-card v-for="task in inProgressTasks" :key="task.id"
                 :task-id="task.id" :title="task.title" :column="task.column"
-                @move-next="moveNext"></task-card>
+                @move-next="moveNext" @remove="removeTask"></task-card>
         </div>
     </section>
 
@@ -64,7 +64,7 @@
         <div class="task-list" id="done-list">
             <task-card v-for="task in doneTasks" :key="task.id"
                 :task-id="task.id" :title="task.title" :column="task.column"
-                @move-next="moveNext"></task-card>       
+                @move-next="moveNext" @remove="removeTask"></task-card>       
         </div>
     </section>
 </main>
