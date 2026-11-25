@@ -313,3 +313,51 @@ img {
     color: #991b1b;
     background-color: #fef2f2;
 }
+
+/* Картка плавно їде за рахунок transform: браузер анімує його без перерахунку розмітки */
+.card {
+    transition: transform 0.4s ease, box-shadow 0.2s ease;
+}
+
+/* картка, яку переносить користувач: над іншими колонками і з більшою тінню */
+.card.is-moving {
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* поява нової картки */
+@keyframes card-enter {
+    from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+.card--enter {
+    animation: card-enter 0.3s ease-out;
+}
+
+/* кольори зон, ті самі, що в заголовках колонок */
+#ToDo       { --zone-color: #1d4ed8; --zone-bg: #dbeafe; }
+#InProgress { --zone-color: #c2410c; --zone-bg: #ffedd5; }
+#Done       { --zone-color: #166534; --zone-bg: #dcfce7; }
+
+section {
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* підказка: сюди піде картка після кліку (наведення / фокус) */
+section.drop-preview {
+    box-shadow: 0 0 0 2px var(--zone-color);
+}
+
+/* зона, куди картка летить зараз */
+section.drop-target {
+    background-color: var(--zone-bg);
+    box-shadow: 0 0 0 4px var(--zone-color);
+}
+
+/* видима рамка фокусу для керування з клавіатури */
+.card:focus-visible {
+    outline: 3px solid #1e3a8a;
+    outline-offset: 2px;
+}

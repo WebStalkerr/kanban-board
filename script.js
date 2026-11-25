@@ -11,7 +11,7 @@ const API_URL = 'https://jsonplaceholder.typicode.com/todos?userId=3';
 
 // Схема IndexedDB: база KanbanDB, версія 1, object store "cards" з ключем id
 const DB_NAME = 'KanbanDB';
-const DB_VERSION = 0;
+const DB_VERSION = 1;
 const STORE_NAME = 'cards';
 
 const form = document.querySelector('#task-form');
@@ -20,6 +20,7 @@ const columnSelect = document.querySelector('#task-column');
 const loadingEl = document.querySelector('#loading');
 const errorEl = document.querySelector('#error');
 const refreshBtn = document.querySelector('#refresh-btn');
+const boardEl = document.querySelector('#board');
 
 // підсумок за колонками у консоль
 function countByStatus(taskList) {
@@ -198,6 +199,81 @@ function mapTodoToTask(todo) {
     };
 }
 
+// наступна колонка для картки або null, якщо вона вже в Done (порядок береться з COLUMN_ORDER)
+function nextColumn(column) {
+    const index = COLUMN_ORDER.indexOf(column);
+    return index >= 0 && index < COLUMN_ORDER.length - 1 ? COLUMN_ORDER[index + 1] : null;
+}
+
+// Чекає завершення transition transform на елементі.
+// Якщо анімації вимкнено (тривалість 0), повертається одразу
+function afterTransition(el) {
+    const duration = parseFloat(getComputedStyle(el).transitionDuration) || 0;
+    if (duration === 0) return Promise.resolve();
+
+    return new Promise(resolve => {
+        const timer = setTimeout(finish, 5000);   // запасний вихід, якщо подія не прийде
+        function onEnd(event) {
+            if (event.target === el && event.propertyName === 'transform') finish();
+        }
+        function finish() {
+            clearTimeout(timer);
+            el.removeEventListener('transitionend', onEnd);
+            el.removeEventListener('transitioncancel', onEnd);
+            resolve();
+        }
+        el.addEventListener('transitionend', onEnd);
+        el.addEventListener('transitioncancel', onEnd);
+    });
+}
+
+// FLIP-анімація карток: First (де були) -> Last (де стали) -> Invert (transform назад) -> Play (transition до нуля).
+// change: асинхронна зміна даних (IndexedDB + reload); movedId: картка, яку переносить користувач
+async function flipCards(change, movedId = null) {
+    // First: позиції всіх карток до зміни даних
+    const before = new Map();
+    for (const el of boardEl.querySelectorAll('.card[data-id]')) {
+        before.set(el.dataset.id, el.getBoundingClientRect());
+    }
+
+    await change();
+    await Vue.nextTick();   // чекаємо, поки Vue оновить DOM
+
+    // Last + Invert
+    const shifted = [];
+    for (const el of boardEl.querySelectorAll('.card[data-id]')) {
+        const first = before.get(el.dataset.id);
+        if (!first) {
+            // картки раніше не було: анімація появи через @keyframes
+            el.classList.add('card--enter');
+            el.addEventListener('animationend', () => el.classList.remove('card--enter'), { once: true });
+            continue;
+        }
+        const last = el.getBoundingClientRect();
+        const dx = first.left - last.left;
+        const dy = first.top - last.top;
+        if (dx === 0 && dy === 0) continue;
+
+        el.style.transition = 'none';                      // миттєво ставимо картку на старе місце
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        if (el.dataset.id === String(movedId)) el.classList.add('is-moving');
+        shifted.push(el);
+    }
+    if (shifted.length === 0) return;
+
+    void boardEl.offsetHeight;   // примусовий reflow: браузер фіксує стартові позиції
+
+    // Play: повертаємо transition із style.css і прибираємо transform
+    for (const el of shifted) {
+        el.style.transition = '';
+        el.style.transform = '';
+    }
+
+    const movedEl = shifted.find(el => el.classList.contains('is-moving'));
+    await afterTransition(movedEl || shifted[0]);
+    movedEl?.classList.remove('is-moving');
+}
+
 //ловить випадок, коли в полі лише пробіли
 titleInput.addEventListener('input', () => {
     titleInput.setCustomValidity(''); // спочатку повертаємо поле в коректний стан
@@ -219,18 +295,23 @@ form.addEventListener('submit', event => {
 
 // taskId потрібен додатково до title і column, щоб картка могла повідомити, яку саме задачу клікнули
 // Компонент однієї картки. Усі дані отримує лише через props.
+// Клік / Enter / Space: перемістити далі; наведення / фокус: показати, куди піде картка
 const TaskCard = {
     name: 'TaskCard',
     props: ['taskId', 'title', 'column'],
-    emits: ['moveNext', 'remove'],
+    emits: ['moveNext', 'remove', 'preview'],
     computed: {
         isDone() {
             return this.column === 'done';
         }
     },
     template: `
-        <article class="card" :class="{ done: isDone }"
-                 @click="$emit('moveNext', taskId)">
+        <article class="card" :class="{ done: isDone }" :data-id="taskId" tabindex="0"
+                 @click="$emit('moveNext', taskId)"
+                 @keydown.enter.self.prevent="$emit('moveNext', taskId, 'keyboard')"
+                 @keydown.space.self.prevent="$emit('moveNext', taskId, 'keyboard')"
+                 @mouseenter="$emit('preview', taskId)" @mouseleave="$emit('preview', null)"
+                 @focus="$emit('preview', taskId)" @blur="$emit('preview', null)">
             <div class="card-head">
                 <h3>{{ title }}</h3>
                 <button type="button" class="card-remove" aria-label="Видалити задачу"
@@ -244,7 +325,10 @@ const vm = Vue.createApp({
     components: { TaskCard },
     data() {
         return {
-            tasks: []
+            tasks: [],
+            targetColumn: null,   // колонка, куди зараз летить картка (drop-target)
+            previewColumn: null,  // колонка, куди картка піде після кліку (drop-preview)
+            animating: false      // триває анімація переміщення
         };
     },
         computed: {
@@ -262,6 +346,22 @@ const vm = Vue.createApp({
         }
     },
     methods: {
+        // класи підсвічування для секції колонки: обчислюються зі стану, а не задаються вручну
+        zoneClass(column) {
+            return {
+                'drop-target': this.targetColumn === column,
+                'drop-preview': this.previewColumn === column && this.targetColumn !== column
+            };
+        },
+        // наведення / фокус на картці: підсвічуємо колонку, куди вона піде після кліку
+        preview(id) {
+            if (id === null || this.animating) {
+                this.previewColumn = null;
+                return;
+            }
+            const task = this.tasks.find(t => t.id === id);
+            this.previewColumn = task ? nextColumn(task.column) : null;
+        },
         // джерело даних для рендеру: IndexedDB → реактивний стан
         async reload() {
             this.tasks = await getAllItems();
@@ -273,28 +373,47 @@ const vm = Vue.createApp({
                     title,
                     column
                 };
-                await addItem(newTask);
-                await this.reload();
+                await flipCards(async () => {
+                    await addItem(newTask);
+                    await this.reload();
+                });
             } catch (error) {
                 showDbError(error);
             }
         },
+        // клік по картці: put з новим column + анімація переміщення і підсвічування зони
         async moveNext(id) {
+            if (this.animating) return;   // нове переміщення лише після завершення попереднього
             const task = this.tasks.find(t => t.id === id);
-            if (!task) return;
+            const target = task ? nextColumn(task.column) : null;
+            if (!target) return;          // картки немає або вона вже в Done
 
-            const index = COLUMN_ORDER.indexOf(task.column);
-            if (index === COLUMN_ORDER.length - 1) {
-                return;
+            this.animating = true;
+            this.previewColumn = null;
+            this.targetColumn = target;   // підсвічуємо зону призначення
+            try {
+                await flipCards(async () => {
+                    await updateItem({ id: task.id, title: task.title, column: target });
+                    await this.reload();
+                }, task.id);
+            } catch (error) {
+                showDbError(error);
+            } finally {
+                this.targetColumn = null;   // анімація завершена: знімаємо підсвічування
+                this.animating = false;
             }
 
-            // put з тим самим id і новим column; передаємо звичайний об'єкт, а не Proxy
-            await updateItem({ id: task.id, title: task.title, column: COLUMN_ORDER[index + 1] });
-            await this.reload();
         },
         async removeTask(id) {
-            await deleteItem(id);
-            await this.reload();
+            this.previewColumn = null;
+            try {
+                await flipCards(async () => {
+                    await deleteItem(id);
+                    await this.reload();
+                });
+            } catch (error) {
+                showDbError(error);
+            }
         }
     }
 }).mount('#board');

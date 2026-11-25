@@ -40,31 +40,31 @@
     </div>
 
     <main id="board" v-cloak>
-    <section id="ToDo">
+    <section id="ToDo" :class="zoneClass('todo')">
         <h2>To Do</h2>
         <div class="task-list" id="todo-list">
             <task-card v-for="task in todoTasks" :key="task.id"
                 :task-id="task.id" :title="task.title" :column="task.column"
-                @move-next="moveNext" @remove="removeTask"></task-card>
+                @move-next="moveNext" @remove="removeTask" @preview="preview"></task-card>
         </div>
     </section>
 
-    <section id="InProgress">
+    <section id="InProgress" :class="zoneClass('doing')">
         <h2>In Progress</h2>
         <div class="task-list" id="inprogress-list">
             <task-card v-for="task in inProgressTasks" :key="task.id"
                 :task-id="task.id" :title="task.title" :column="task.column"
-                @move-next="moveNext" @remove="removeTask"></task-card>
+                @move-next="moveNext" @remove="removeTask" @preview="preview"></task-card>
         </div>
     </section>
 
-    <section id="Done">
+    <section id="Done" :class="zoneClass('done')">
         <h2>Done</h2>
         <p id="done-count">Виконано: {{ doneCount }}</p>
         <div class="task-list" id="done-list">
             <task-card v-for="task in doneTasks" :key="task.id"
                 :task-id="task.id" :title="task.title" :column="task.column"
-                @move-next="moveNext" @remove="removeTask"></task-card>       
+                @move-next="moveNext" @remove="removeTask" @preview="preview"></task-card>       
         </div>
     </section>
 </main>
